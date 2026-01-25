@@ -98,6 +98,9 @@ importers:
       '@aws-sdk/client-transfer':
         specifier: ^3.700.0
         version: 3.975.0
+      '@sweepbright/iter-helpers':
+        specifier: ^0.6.0
+        version: 0.6.0
       chalk:
         specifier: ^5.3.0
         version: 5.6.2
@@ -614,6 +617,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@harnyk/chan@0.1.1':
+    resolution: {integrity: sha512-vA6jqDl85Q5irieQU8Q+bo/xeuiVPJHcjDou3TajuIpaa17XMdvLX0NHsmaM8ljgpJQ3+j7W0CCgfT2jnv3Dnw==}
+
   '@smithy/abort-controller@4.2.8':
     resolution: {integrity: sha512-peuVfkYHAmS5ybKxWcfraK7WBBP0J+rkfUcbHJJKQ4ir3UAUNQI+Y4Vt/PqSzGqgloJ5O1dk7+WzNL8wcCSXbw==}
     engines: {node: '>=18.0.0'}
@@ -829,6 +835,9 @@ packages:
   '@smithy/uuid@1.1.0':
     resolution: {integrity: sha512-4aUIteuyxtBUhVdiQqcDhKFitwfd9hqoSDYY2KRXiWtgoWJ9Bmise+KfEPDiVHWeJepvF8xJO9/9+WDIciMFFw==}
     engines: {node: '>=18.0.0'}
+
+  '@sweepbright/iter-helpers@0.6.0':
+    resolution: {integrity: sha512-kCDJQhZEMQc4COqJbj+EIq+/KgpR8ipb78UpoqAEu4carDKjYy5aSqbXfadTBia+87gH5SiAt9yagNLPW8W0HA==}
 
   '@types/node@22.19.7':
     resolution: {integrity: sha512-MciR4AKGHWl7xwxkBa6xUGxQJ4VBOmPTF7sL+iGzuahOFaO0jHCsuEfS80pan1ef4gWId1oWOweIhrDEYLuaOw==}
@@ -2912,6 +2921,8 @@ snapshots:
   '@esbuild/win32-x64@0.27.2':
     optional: true
 
+  '@harnyk/chan@0.1.1': {}
+
   '@smithy/abort-controller@4.2.8':
     dependencies:
       '@smithy/types': 4.12.0
@@ -3249,6 +3260,10 @@ snapshots:
   '@smithy/uuid@1.1.0':
     dependencies:
       tslib: 2.8.1
+
+  '@sweepbright/iter-helpers@0.6.0':
+    dependencies:
+      '@harnyk/chan': 0.1.1
 
   '@types/node@22.19.7':
     dependencies:
