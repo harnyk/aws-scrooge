@@ -4,6 +4,9 @@
   "description": "AWS resource scanner to find all resources in your account",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "scrooge": "dist/index.js"
+  },
   "scripts": {
     "start": "tsx src/index.ts",
     "build": "tsc",

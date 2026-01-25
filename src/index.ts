@@ -1,15 +1,12 @@
+#!/usr/bin/env node
 import { chain } from '@sweepbright/iter-helpers';
 import {
-  printBanner,
   printHeader,
-  printSubHeader,
-  printFound,
-  printNone,
   printError,
   printTable,
   printAccountInfo,
   printCostSummary,
-  printScanComplete,
+  printEmptyResourcesTree,
 } from './output.js';
 import { getCostAndUsage } from './cost.js';
 import {
@@ -52,18 +49,18 @@ import {
 import type { ScanResult } from './types.js';
 
 type Category =
-  | 'COMPUTE'
-  | 'STORAGE'
-  | 'DATABASE'
-  | 'CACHE'
-  | 'NETWORK'
+  | 'Compute'
+  | 'Storage'
+  | 'Database'
+  | 'Cache'
+  | 'Network'
   | 'API'
-  | 'MESSAGING'
-  | 'CONTAINERS'
-  | 'MONITORING'
-  | 'SECURITY'
-  | 'DATA'
-  | 'TRANSFER';
+  | 'Messaging'
+  | 'Containers'
+  | 'Monitoring'
+  | 'Security'
+  | 'Data'
+  | 'Transfer';
 
 interface ScanTask<T = unknown> {
   category: Category;
@@ -77,135 +74,134 @@ interface ScanTaskResult<T = unknown> {
   result: ScanResult<T>;
 }
 
-// Define all scan tasks with their display configuration
 const scanTasks: ScanTask<any>[] = [
-  // COMPUTE
+  // Compute
   {
-    category: 'COMPUTE',
+    category: 'Compute',
     scanner: scanEC2Instances,
     headers: ['Instance ID', 'Name', 'Type', 'State', 'Launch Time'],
     rowMapper: (r) => [r.instanceId, r.name, r.type, r.state, r.launchTime],
   },
   {
-    category: 'COMPUTE',
+    category: 'Compute',
     scanner: scanLambdaFunctions,
     headers: ['Function Name', 'Runtime', 'Memory (MB)', 'Last Modified'],
     rowMapper: (r) => [r.functionName, r.runtime, String(r.memorySize), r.lastModified],
   },
   {
-    category: 'COMPUTE',
+    category: 'Compute',
     scanner: scanECSClusters,
     headers: ['Cluster Name', 'Status', 'Running Tasks', 'Services'],
     rowMapper: (r) => [r.clusterName, r.status, String(r.runningTasksCount), String(r.servicesCount)],
   },
   {
-    category: 'COMPUTE',
+    category: 'Compute',
     scanner: scanEKSClusters,
     headers: ['Cluster Name', 'Status', 'Version'],
     rowMapper: (r) => [r.name, r.status, r.version],
   },
-  // STORAGE
+  // Storage
   {
-    category: 'STORAGE',
+    category: 'Storage',
     scanner: scanEBSVolumes,
     headers: ['Volume ID', 'Size (GB)', 'State', 'Type', 'Attached To'],
     rowMapper: (r) => [r.volumeId, String(r.size), r.state, r.type, r.attachedTo],
   },
   {
-    category: 'STORAGE',
+    category: 'Storage',
     scanner: scanEBSSnapshots,
     headers: ['Snapshot ID', 'Volume Size (GB)', 'Start Time', 'Description'],
     rowMapper: (r) => [r.snapshotId, String(r.volumeSize), r.startTime, r.description.substring(0, 40)],
   },
   {
-    category: 'STORAGE',
+    category: 'Storage',
     scanner: scanS3Buckets,
     headers: ['Bucket Name', 'Creation Date'],
     rowMapper: (r) => [r.name, r.creationDate],
   },
   {
-    category: 'STORAGE',
+    category: 'Storage',
     scanner: scanEFSFileSystems,
     headers: ['File System ID', 'Name', 'State', 'Size (Bytes)'],
     rowMapper: (r) => [r.fileSystemId, r.name, r.lifeCycleState, String(r.sizeInBytes)],
   },
-  // DATABASE
+  // Database
   {
-    category: 'DATABASE',
+    category: 'Database',
     scanner: scanRDSInstances,
     headers: ['DB Instance ID', 'Engine', 'Instance Class', 'Status'],
     rowMapper: (r) => [r.dbInstanceId, r.engine, r.instanceClass, r.status],
   },
   {
-    category: 'DATABASE',
+    category: 'Database',
     scanner: scanRDSSnapshots,
     headers: ['Snapshot ID', 'DB Instance', 'Engine', 'Created'],
     rowMapper: (r) => [r.snapshotId, r.dbInstanceId, r.engine, r.snapshotCreateTime],
   },
   {
-    category: 'DATABASE',
+    category: 'Database',
     scanner: scanDynamoDBTables,
     headers: ['Table Name', 'Status', 'Item Count', 'Size (Bytes)'],
     rowMapper: (r) => [r.tableName, r.tableStatus, String(r.itemCount), String(r.tableSizeBytes)],
   },
   {
-    category: 'DATABASE',
+    category: 'Database',
     scanner: scanRedshiftClusters,
     headers: ['Cluster ID', 'Node Type', 'Nodes', 'Status'],
     rowMapper: (r) => [r.clusterIdentifier, r.nodeType, String(r.numberOfNodes), r.clusterStatus],
   },
   {
-    category: 'DATABASE',
+    category: 'Database',
     scanner: scanOpenSearchDomains,
     headers: ['Domain Name', 'Engine Version', 'Instance Type', 'Instance Count'],
     rowMapper: (r) => [r.domainName, r.engineVersion, r.instanceType, String(r.instanceCount)],
   },
-  // CACHE
+  // Cache
   {
-    category: 'CACHE',
+    category: 'Cache',
     scanner: scanElastiCacheClusters,
     headers: ['Cluster ID', 'Engine', 'Node Type', 'Status'],
     rowMapper: (r) => [r.cacheClusterId, r.engine, r.cacheNodeType, r.status],
   },
-  // NETWORK
+  // Network
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanElasticIPs,
     headers: ['Public IP', 'Allocation ID', 'Associated With'],
     rowMapper: (r) => [r.publicIp, r.allocationId, r.associatedWith],
   },
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanNATGateways,
     headers: ['NAT Gateway ID', 'State', 'VPC ID', 'Subnet ID'],
     rowMapper: (r) => [r.natGatewayId, r.state, r.vpcId, r.subnetId],
   },
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanVPCEndpoints,
     headers: ['Endpoint ID', 'Service Name', 'VPC ID', 'Type'],
     rowMapper: (r) => [r.vpcEndpointId, r.serviceName, r.vpcId, r.type],
   },
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanLoadBalancers,
     headers: ['Name', 'Type', 'Scheme', 'State'],
     rowMapper: (r) => [r.name, r.type, r.scheme, r.state],
   },
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanClassicLoadBalancers,
     headers: ['Name', 'Scheme', 'VPC ID'],
     rowMapper: (r) => [r.name, r.scheme, r.vpcId],
   },
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanCloudFrontDistributions,
     headers: ['ID', 'Domain Name', 'Status', 'Enabled'],
     rowMapper: (r) => [r.id, r.domainName, r.status, String(r.enabled)],
   },
   {
-    category: 'NETWORK',
+    category: 'Network',
     scanner: scanRoute53HostedZones,
     headers: ['Zone ID', 'Name', 'Record Count', 'Private'],
     rowMapper: (r) => [r.id, r.name, String(r.recordSetCount), String(r.isPrivate)],
@@ -223,134 +219,100 @@ const scanTasks: ScanTask<any>[] = [
     headers: ['API ID', 'Name', 'Protocol'],
     rowMapper: (r) => [r.apiId, r.name, r.protocolType],
   },
-  // MESSAGING
+  // Messaging
   {
-    category: 'MESSAGING',
+    category: 'Messaging',
     scanner: scanSQSQueues,
     headers: ['Queue Name', 'Queue URL'],
     rowMapper: (r) => [r.queueName, r.queueUrl],
   },
   {
-    category: 'MESSAGING',
+    category: 'Messaging',
     scanner: scanSNSTopics,
     headers: ['Topic Name', 'Topic ARN'],
     rowMapper: (r) => [r.topicName, r.topicArn],
   },
   {
-    category: 'MESSAGING',
+    category: 'Messaging',
     scanner: scanKinesisStreams,
     headers: ['Stream Name', 'Status', 'Shard Count'],
     rowMapper: (r) => [r.streamName, r.status, String(r.shardCount)],
   },
-  // CONTAINERS
+  // Containers
   {
-    category: 'CONTAINERS',
+    category: 'Containers',
     scanner: scanECRRepositories,
     headers: ['Repository Name', 'URI', 'Image Count'],
     rowMapper: (r) => [r.repositoryName, r.repositoryUri, String(r.imageCount)],
   },
-  // MONITORING
+  // Monitoring
   {
-    category: 'MONITORING',
+    category: 'Monitoring',
     scanner: scanLogGroups,
     headers: ['Log Group Name', 'Stored Bytes', 'Retention (Days)'],
-    rowMapper: (r) => [r.logGroupName, String(r.storedBytes), r.retentionDays !== null ? String(r.retentionDays) : 'Never Expire'],
+    rowMapper: (r) => [
+      r.logGroupName,
+      String(r.storedBytes),
+      r.retentionDays !== null ? String(r.retentionDays) : 'Never Expire',
+    ],
   },
-  // SECURITY
+  // Security
   {
-    category: 'SECURITY',
+    category: 'Security',
     scanner: scanSecrets,
     headers: ['Secret Name', 'Last Accessed', 'Last Changed'],
     rowMapper: (r) => [r.name, r.lastAccessedDate, r.lastChangedDate],
   },
   {
-    category: 'SECURITY',
+    category: 'Security',
     scanner: scanKMSKeys,
     headers: ['Key ID', 'Description', 'State'],
     rowMapper: (r) => [r.keyId, r.description.substring(0, 40), r.keyState],
   },
   {
-    category: 'SECURITY',
+    category: 'Security',
     scanner: scanACMCertificates,
     headers: ['Domain', 'Status', 'Type', 'ARN'],
     rowMapper: (r) => [r.domainName, r.status, r.type, r.certificateArn.substring(0, 50)],
   },
-  // DATA
+  // Data
   {
-    category: 'DATA',
+    category: 'Data',
     scanner: scanGlueJobs,
     headers: ['Job Name', 'Command', 'Max Capacity'],
     rowMapper: (r) => [r.name, r.command, String(r.maxCapacity)],
   },
   {
-    category: 'DATA',
+    category: 'Data',
     scanner: scanSageMakerEndpoints,
     headers: ['Endpoint Name', 'Status', 'Created'],
     rowMapper: (r) => [r.endpointName, r.status, r.creationTime],
   },
-  // TRANSFER
+  // Transfer
   {
-    category: 'TRANSFER',
+    category: 'Transfer',
     scanner: scanTransferServers,
     headers: ['Server ID', 'State', 'Endpoint Type', 'Protocols'],
     rowMapper: (r) => [r.serverId, r.state, r.endpointType, r.protocols.join(', ')],
   },
 ];
 
-function displayScanResult<T>(
-  result: ScanResult<T>,
-  headers: string[],
-  rowMapper: (resource: T) => string[]
-): void {
-  printSubHeader(result.name);
-
-  if (result.error) {
-    printError(result.error);
-    return;
-  }
-
-  if (result.count === 0) {
-    printNone();
-    return;
-  }
-
-  printFound(`Found ${result.count} ${result.name.toLowerCase()}`);
-  printTable(headers, result.resources.map(rowMapper));
-}
-
 const categoryOrder: Category[] = [
-  'COMPUTE',
-  'STORAGE',
-  'DATABASE',
-  'CACHE',
-  'NETWORK',
+  'Compute',
+  'Storage',
+  'Database',
+  'Cache',
+  'Network',
   'API',
-  'MESSAGING',
-  'CONTAINERS',
-  'MONITORING',
-  'SECURITY',
-  'DATA',
-  'TRANSFER',
+  'Messaging',
+  'Containers',
+  'Monitoring',
+  'Security',
+  'Data',
+  'Transfer',
 ];
 
-const categoryHeaders: Record<Category, string> = {
-  COMPUTE: 'COMPUTE RESOURCES',
-  STORAGE: 'STORAGE RESOURCES',
-  DATABASE: 'DATABASE RESOURCES',
-  CACHE: 'CACHE RESOURCES',
-  NETWORK: 'NETWORK RESOURCES',
-  API: 'API RESOURCES',
-  MESSAGING: 'MESSAGING RESOURCES',
-  CONTAINERS: 'CONTAINER RESOURCES',
-  MONITORING: 'MONITORING RESOURCES',
-  SECURITY: 'SECURITY RESOURCES',
-  DATA: 'DATA RESOURCES',
-  TRANSFER: 'TRANSFER RESOURCES',
-};
-
 async function main(): Promise<void> {
-  printBanner();
-
   // Get account info
   try {
     const account = await getAccountInfo();
@@ -361,47 +323,68 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  console.log('\nScanning AWS resources (4 concurrent scans)...\n');
-
   // Run all scans in parallel with concurrency of 4
   const results = await chain(scanTasks)
-    .concurrentMap(
-      { concurrency: 4 },
-      async (task): Promise<ScanTaskResult> => {
-        const result = await task.scanner();
-        return { task, result };
-      }
-    )
+    .concurrentMap({ concurrency: 4 }, async (task): Promise<ScanTaskResult> => {
+      const result = await task.scanner();
+      return { task, result };
+    })
     .toArray();
 
-  // Group results by category
-  const resultsByCategory = new Map<Category, ScanTaskResult[]>();
-  for (const result of results) {
-    const category = result.task.category;
-    if (!resultsByCategory.has(category)) {
-      resultsByCategory.set(category, []);
+  // Separate empty and found resources
+  const emptyByCategory = new Map<string, string[]>();
+  const foundResults: ScanTaskResult[] = [];
+  const errors: ScanTaskResult[] = [];
+
+  for (const r of results) {
+    if (r.result.error) {
+      errors.push(r);
+    } else if (r.result.count === 0) {
+      const category = r.task.category;
+      if (!emptyByCategory.has(category)) {
+        emptyByCategory.set(category, []);
+      }
+      emptyByCategory.get(category)!.push(r.result.name);
+    } else {
+      foundResults.push(r);
     }
-    resultsByCategory.get(category)!.push(result);
   }
 
-  // Display results in category order
+  // Print empty resources tree
+  printEmptyResourcesTree(emptyByCategory);
+
+  // Print errors if any
+  if (errors.length > 0) {
+    printHeader('Errors');
+    for (const { result } of errors) {
+      printError(`${result.name}: ${result.error}`);
+    }
+  }
+
+  // Group found results by category
+  const foundByCategory = new Map<Category, ScanTaskResult[]>();
+  for (const r of foundResults) {
+    const category = r.task.category;
+    if (!foundByCategory.has(category)) {
+      foundByCategory.set(category, []);
+    }
+    foundByCategory.get(category)!.push(r);
+  }
+
+  // Display found resources by category
   for (const category of categoryOrder) {
-    const categoryResults = resultsByCategory.get(category);
+    const categoryResults = foundByCategory.get(category);
     if (!categoryResults || categoryResults.length === 0) continue;
 
-    printHeader(categoryHeaders[category]);
-
-    // Sort results within category to maintain consistent order
-    const taskOrder = scanTasks
-      .filter((t) => t.category === category)
-      .map((t) => t.scanner);
-
-    categoryResults.sort((a, b) => {
-      return taskOrder.indexOf(a.task.scanner) - taskOrder.indexOf(b.task.scanner);
-    });
+    // Sort within category to maintain consistent order
+    const taskOrder = scanTasks.filter((t) => t.category === category).map((t) => t.scanner);
+    categoryResults.sort(
+      (a, b) => taskOrder.indexOf(a.task.scanner) - taskOrder.indexOf(b.task.scanner)
+    );
 
     for (const { task, result } of categoryResults) {
-      displayScanResult(result, task.headers, task.rowMapper);
+      printHeader(`${result.name} (${result.count})`);
+      printTable(task.headers, result.resources.map(task.rowMapper));
     }
   }
 
@@ -413,8 +396,6 @@ async function main(): Promise<void> {
     const message = error instanceof Error ? error.message : 'Unknown error';
     printError(`Failed to get cost data: ${message}`);
   }
-
-  printScanComplete();
 }
 
 main().catch((error) => {
