@@ -1,7 +1,8 @@
 import { SQSClient, ListQueuesCommand } from '@aws-sdk/client-sqs';
 import { SNSClient, ListTopicsCommand } from '@aws-sdk/client-sns';
 import { KinesisClient, ListStreamsCommand, DescribeStreamSummaryCommand } from '@aws-sdk/client-kinesis';
-import type { ScanResult, SQSQueue, SNSTopic, KinesisStream } from '../types.js';
+import { EventBridgeClient, ListEventBusesCommand } from '@aws-sdk/client-eventbridge';
+import type { ScanResult, SQSQueue, SNSTopic, KinesisStream, EventBridgeBus } from '../types.js';
 
 export async function scanSQSQueues(): Promise<ScanResult<SQSQueue>> {
   const client = new SQSClient({});
@@ -123,5 +124,40 @@ export async function scanKinesisStreams(): Promise<ScanResult<KinesisStream>> {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return { name: 'Kinesis Streams', count: 0, resources: [], error: message };
+  }
+}
+
+export async function scanEventBridgeBuses(): Promise<ScanResult<EventBridgeBus>> {
+  const client = new EventBridgeClient({});
+
+  try {
+    const buses: EventBridgeBus[] = [];
+    let nextToken: string | undefined;
+
+    do {
+      const response = await client.send(
+        new ListEventBusesCommand({
+          NextToken: nextToken,
+        })
+      );
+
+      response.EventBuses?.forEach((bus) => {
+        buses.push({
+          name: bus.Name || 'Unknown',
+          arn: bus.Arn || 'Unknown',
+        });
+      });
+
+      nextToken = response.NextToken;
+    } while (nextToken);
+
+    return {
+      name: 'EventBridge Buses',
+      count: buses.length,
+      resources: buses,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { name: 'EventBridge Buses', count: 0, resources: [], error: message };
   }
 }

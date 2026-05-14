@@ -37,6 +37,7 @@ import {
   scanSQSQueues,
   scanSNSTopics,
   scanKinesisStreams,
+  scanEventBridgeBuses,
   scanAPIGatewayREST,
   scanAPIGatewayHTTP,
   scanCloudFrontDistributions,
@@ -237,6 +238,12 @@ const scanTasks: ScanTask<any>[] = [
     scanner: scanKinesisStreams,
     headers: ['Stream Name', 'Status', 'Shard Count'],
     rowMapper: (r) => [r.streamName, r.status, String(r.shardCount)],
+  },
+  {
+    category: 'Messaging',
+    scanner: scanEventBridgeBuses,
+    headers: ['Bus Name', 'ARN'],
+    rowMapper: (r) => [r.name, r.arn],
   },
   // Containers
   {

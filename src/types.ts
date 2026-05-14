@@ -186,6 +186,11 @@ export interface KinesisStream {
   shardCount: number;
 }
 
+export interface EventBridgeBus {
+  name: string;
+  arn: string;
+}
+
 export interface APIGatewayREST {
   id: string;
   name: string;

@@ -42,7 +42,7 @@ export { scanECRRepositories, scanECSClusters, scanEKSClusters } from './contain
 export { scanDynamoDBTables, scanRedshiftClusters } from './database.js';
 
 // Messaging
-export { scanSQSQueues, scanSNSTopics, scanKinesisStreams } from './messaging.js';
+export { scanSQSQueues, scanSNSTopics, scanKinesisStreams, scanEventBridgeBuses } from './messaging.js';
 
 // API
 export { scanAPIGatewayREST, scanAPIGatewayHTTP } from './api.js';
